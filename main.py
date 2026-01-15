@@ -57,9 +57,7 @@ class betscanner:
         try:
             while True:
                 scan_count += 1
-                print(f"\n{'='*60}")
                 print(f"scan #{scan_count}")
-                print(f"{'='*60}\n")
                 
                 results = self.run_single_scan(scan_type)
                 
@@ -73,8 +71,8 @@ class betscanner:
                 time.sleep(interval)
                 
         except KeyboardInterrupt:
-            print("\n\nstopping scanner...")
-            print(f"completed {scan_count} scans")
+            print("\n\n✗ scan terminated by user")
+            print(f"completed {scan_count} scans before exit")
     
     def _print_arbitrage_summary(self, results: dict):
         """prints formatted arbitrage results"""
