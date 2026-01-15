@@ -1,5 +1,5 @@
 from typing import List, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 
 class arbitragescanner:
@@ -9,6 +9,11 @@ class arbitragescanner:
         self.kalshi = kalshi_client
         self.polymarket = polymarket_client
         self.min_profit_threshold = 0.02  # 2% minimum profit
+        self.time_window_hours = None  # no filter by default
+    
+    def set_time_window(self, hours: Optional[float]):
+        """set time window for filtering markets (e.g., 1, 0.25 for 15min, 0.5 for 30min)"""
+        self.time_window_hours = hours
         
     def find_cross_platform_arbitrage(self) -> List[Dict]:
         """
@@ -17,9 +22,14 @@ class arbitragescanner:
         """
         opportunities = []
         
-        # fetch markets from both platforms
-        kalshi_markets = self.kalshi.get_markets(limit=50)
-        polymarket_markets = self.polymarket.get_simplified_markets()
+        # fetch markets from both platforms with time window
+        kalshi_params = {"limit": 50}
+        if self.time_window_hours:
+            max_close_ts = int((datetime.now() + timedelta(hours=self.time_window_hours)).timestamp())
+            kalshi_params["max_close_ts"] = max_close_ts
+        
+        kalshi_markets = self.kalshi.get_markets(**kalshi_params)
+        polymarket_markets = self.polymarket.get_simplified_markets(self.time_window_hours)
         
         # match markets by similarity in titles/questions
         for k_market in kalshi_markets:
@@ -72,13 +82,22 @@ class arbitragescanner:
         cost1_poly_no = p_no_price
         total_cost1 = cost1_kalshi_yes + cost1_poly_no
         
+        # kalshi fee: 7% on profits, polymarket: ~2% gas + 2% platform
+        kalshi_fee_rate = 0.07
+        polymarket_fee_rate = 0.04  # 2% platform + ~2% gas estimate
+        
         cost2_poly_yes = p_yes_price
         cost2_kalshi_no = k_no_ask
         total_cost2 = cost2_poly_yes + cost2_kalshi_no
         
         # arbitrage exists if total cost < 1 (guaranteed profit)
         if total_cost1 < 1:
-            profit_pct = ((1 - total_cost1) / total_cost1) * 100
+            gross_profit = 1 - total_cost1
+            kalshi_profit_fee = gross_profit * kalshi_fee_rate
+            polymarket_gas = 0.02  # estimated gas in dollars
+            net_profit = gross_profit - kalshi_profit_fee - polymarket_gas
+            profit_pct = (net_profit / total_cost1) * 100
+            
             if profit_pct >= self.min_profit_threshold * 100:
                 return {
                     "type": "cross_platform_arbitrage",
@@ -87,14 +106,34 @@ class arbitragescanner:
                     "kalshi_title": kalshi_market.get("title", ""),
                     "polymarket_question": polymarket_market.get("question", ""),
                     "strategy": "buy yes on kalshi, no on polymarket",
+                    "trade_details": {
+                        "kalshi_side": "yes",
+                        "kalshi_price": cost1_kalshi_yes,
+                        "polymarket_side": "no",
+                        "polymarket_price": cost1_poly_no,
+                        "position_size": 1.0
+                    },
                     "total_cost": total_cost1,
                     "guaranteed_return": 1.0,
+                    "gross_profit": gross_profit,
+                    "fees": {
+                        "kalshi_fee": kalshi_profit_fee,
+                        "polymarket_gas": polymarket_gas,
+                        "total_fees": kalshi_profit_fee + polymarket_gas
+                    },
+                    "net_profit": net_profit,
                     "profit_percentage": profit_pct,
+                    "roi_percentage": (net_profit / total_cost1) * 100,
                     "timestamp": datetime.now().isoformat()
                 }
         
         if total_cost2 < 1:
-            profit_pct = ((1 - total_cost2) / total_cost2) * 100
+            gross_profit = 1 - total_cost2
+            kalshi_profit_fee = gross_profit * kalshi_fee_rate
+            polymarket_gas = 0.02
+            net_profit = gross_profit - kalshi_profit_fee - polymarket_gas
+            profit_pct = (net_profit / total_cost2) * 100
+            
             if profit_pct >= self.min_profit_threshold * 100:
                 return {
                     "type": "cross_platform_arbitrage",
@@ -103,9 +142,24 @@ class arbitragescanner:
                     "kalshi_title": kalshi_market.get("title", ""),
                     "polymarket_question": polymarket_market.get("question", ""),
                     "strategy": "buy yes on polymarket, no on kalshi",
+                    "trade_details": {
+                        "polymarket_side": "yes",
+                        "polymarket_price": cost2_poly_yes,
+                        "kalshi_side": "no",
+                        "kalshi_price": cost2_kalshi_no,
+                        "position_size": 1.0
+                    },
                     "total_cost": total_cost2,
                     "guaranteed_return": 1.0,
+                    "gross_profit": gross_profit,
+                    "fees": {
+                        "kalshi_fee": kalshi_profit_fee,
+                        "polymarket_gas": polymarket_gas,
+                        "total_fees": kalshi_profit_fee + polymarket_gas
+                    },
+                    "net_profit": net_profit,
                     "profit_percentage": profit_pct,
+                    "roi_percentage": (net_profit / total_cost2) * 100,
                     "timestamp": datetime.now().isoformat()
                 }
         
@@ -119,7 +173,12 @@ class arbitragescanner:
         opportunities = []
         
         if platform == "kalshi":
-            markets = self.kalshi.get_markets(limit=50)
+            kalshi_params = {"limit": 50}
+            if self.time_window_hours:
+                max_close_ts = int((datetime.now() + timedelta(hours=self.time_window_hours)).timestamp())
+                kalshi_params["max_close_ts"] = max_close_ts
+            
+            markets = self.kalshi.get_markets(**kalshi_params)
             
             for market in markets:
                 yes_ask = market.get("yes_ask", 0) / 100 if market.get("yes_ask") else 0
@@ -129,22 +188,39 @@ class arbitragescanner:
                     total_cost = yes_ask + no_ask
                     
                     if total_cost < 1:
-                        profit_pct = ((1 - total_cost) / total_cost) * 100
+                        gross_profit = 1 - total_cost
+                        kalshi_fee = gross_profit * 0.07  # 7% on profits
+                        net_profit = gross_profit - kalshi_fee
+                        profit_pct = (net_profit / total_cost) * 100
+                        
                         if profit_pct >= self.min_profit_threshold * 100:
                             opportunities.append({
                                 "type": "internal_arbitrage",
                                 "platform": "kalshi",
                                 "market": market.get("ticker", ""),
                                 "title": market.get("title", ""),
+                                "trade_details": {
+                                    "buy_yes_at": yes_ask,
+                                    "buy_no_at": no_ask,
+                                    "position_size": 1.0
+                                },
                                 "yes_ask": yes_ask,
                                 "no_ask": no_ask,
                                 "total_cost": total_cost,
+                                "gross_profit": gross_profit,
+                                "fees": {
+                                    "platform_fee": kalshi_fee,
+                                    "gas_fee": 0,
+                                    "total_fees": kalshi_fee
+                                },
+                                "net_profit": net_profit,
                                 "profit_percentage": profit_pct,
+                                "roi_percentage": (net_profit / total_cost) * 100,
                                 "timestamp": datetime.now().isoformat()
                             })
         
         elif platform == "polymarket":
-            markets = self.polymarket.get_simplified_markets()
+            markets = self.polymarket.get_simplified_markets(self.time_window_hours)
             
             for market in markets:
                 yes_price = market.get("yes_price", 0)
@@ -154,17 +230,36 @@ class arbitragescanner:
                     total_cost = yes_price + no_price
                     
                     if total_cost < 1:
-                        profit_pct = ((1 - total_cost) / total_cost) * 100
+                        gross_profit = 1 - total_cost
+                        gas_fee = 0.02  # estimated gas in dollars
+                        net_profit = gross_profit - gas_fee
+                        profit_pct = (net_profit / total_cost) * 100
+                        
                         if profit_pct >= self.min_profit_threshold * 100:
                             opportunities.append({
                                 "type": "internal_arbitrage",
                                 "platform": "polymarket",
                                 "market": market.get("condition_id", ""),
                                 "question": market.get("question", ""),
+                                "trade_details": {
+                                    "buy_yes_at": yes_price,
+                                    "buy_no_at": no_price,
+                                    "yes_token_id": market.get("yes_token_id", ""),
+                                    "no_token_id": market.get("no_token_id", ""),
+                                    "position_size": 1.0
+                                },
                                 "yes_price": yes_price,
                                 "no_price": no_price,
                                 "total_cost": total_cost,
+                                "gross_profit": gross_profit,
+                                "fees": {
+                                    "platform_fee": 0,
+                                    "gas_fee": gas_fee,
+                                    "total_fees": gas_fee
+                                },
+                                "net_profit": net_profit,
                                 "profit_percentage": profit_pct,
+                                "roi_percentage": (net_profit / total_cost) * 100,
                                 "timestamp": datetime.now().isoformat()
                             })
         

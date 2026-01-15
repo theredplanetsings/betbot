@@ -1,5 +1,5 @@
 from typing import List, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 
 class valuescanner:
@@ -9,6 +9,11 @@ class valuescanner:
         self.kalshi = kalshi_client
         self.polymarket = polymarket_client
         self.min_edge = 0.05  # 5% edge minimum
+        self.time_window_hours = None  # no filter by default
+    
+    def set_time_window(self, hours: Optional[float]):
+        """set time window for filtering markets"""
+        self.time_window_hours = hours
         
     def find_mispriced_markets(self, platform: str = "kalshi") -> List[Dict]:
         """
@@ -41,16 +46,34 @@ class valuescanner:
                         edge_yes = fair_value_yes - implied_prob_yes
                         
                         if edge_yes > self.min_edge:
+                            expected_profit = edge_yes
+                            kalshi_fee = expected_profit * 0.07
+                            net_profit = expected_profit - kalshi_fee
+                            
                             opportunities.append({
                                 "type": "value_bet",
                                 "platform": "kalshi",
                                 "market": ticker,
                                 "title": details.get("title", ""),
                                 "side": "yes",
+                                "trade_details": {
+                                    "action": "buy yes",
+                                    "entry_price": yes_ask,
+                                    "position_size": 1.0,
+                                    "max_payout": 1.0
+                                },
                                 "price": yes_ask,
                                 "fair_value": fair_value_yes,
                                 "edge": edge_yes,
                                 "edge_percentage": edge_yes * 100,
+                                "expected_profit": expected_profit,
+                                "fees": {
+                                    "platform_fee": kalshi_fee,
+                                    "gas_fee": 0,
+                                    "total_fees": kalshi_fee
+                                },
+                                "net_expected_profit": net_profit,
+                                "roi_percentage": (net_profit / yes_ask) * 100,
                                 "volume": details.get("volume", 0),
                                 "liquidity": details.get("open_interest", 0),
                                 "timestamp": datetime.now().isoformat()
@@ -63,23 +86,41 @@ class valuescanner:
                         edge_no = fair_value_no - implied_prob_no
                         
                         if edge_no > self.min_edge:
+                            expected_profit = edge_no
+                            kalshi_fee = expected_profit * 0.07
+                            net_profit = expected_profit - kalshi_fee
+                            
                             opportunities.append({
                                 "type": "value_bet",
                                 "platform": "kalshi",
                                 "market": ticker,
                                 "title": details.get("title", ""),
                                 "side": "no",
+                                "trade_details": {
+                                    "action": "buy no",
+                                    "entry_price": no_ask,
+                                    "position_size": 1.0,
+                                    "max_payout": 1.0
+                                },
                                 "price": no_ask,
                                 "fair_value": fair_value_no,
                                 "edge": edge_no,
                                 "edge_percentage": edge_no * 100,
+                                "expected_profit": expected_profit,
+                                "fees": {
+                                    "platform_fee": kalshi_fee,
+                                    "gas_fee": 0,
+                                    "total_fees": kalshi_fee
+                                },
+                                "net_expected_profit": net_profit,
+                                "roi_percentage": (net_profit / no_ask) * 100,
                                 "volume": details.get("volume", 0),
                                 "liquidity": details.get("open_interest", 0),
                                 "timestamp": datetime.now().isoformat()
                             })
         
         elif platform == "polymarket":
-            markets = self.polymarket.get_simplified_markets()
+            markets = self.polymarket.get_simplified_markets(self.time_window_hours)
             
             for market in markets:
                 yes_price = market.get("yes_price", 0)
@@ -91,16 +132,35 @@ class valuescanner:
                     edge_yes = fair_value_yes - yes_price
                     
                     if edge_yes > self.min_edge:
+                        expected_profit = edge_yes
+                        gas_fee = 0.02
+                        net_profit = expected_profit - gas_fee
+                        
                         opportunities.append({
                             "type": "value_bet",
                             "platform": "polymarket",
                             "market": market.get("condition_id", ""),
                             "question": market.get("question", ""),
                             "side": "yes",
+                            "trade_details": {
+                                "action": "buy yes",
+                                "entry_price": yes_price,
+                                "token_id": market.get("yes_token_id", ""),
+                                "position_size": 1.0,
+                                "max_payout": 1.0
+                            },
                             "price": yes_price,
                             "fair_value": fair_value_yes,
                             "edge": edge_yes,
                             "edge_percentage": edge_yes * 100,
+                            "expected_profit": expected_profit,
+                            "fees": {
+                                "platform_fee": 0,
+                                "gas_fee": gas_fee,
+                                "total_fees": gas_fee
+                            },
+                            "net_expected_profit": net_profit,
+                            "roi_percentage": (net_profit / yes_price) * 100 if yes_price > 0 else 0,
                             "volume": market.get("volume", 0),
                             "liquidity": market.get("liquidity", 0),
                             "timestamp": datetime.now().isoformat()
@@ -111,16 +171,35 @@ class valuescanner:
                     edge_no = fair_value_no - no_price
                     
                     if edge_no > self.min_edge:
+                        expected_profit = edge_no
+                        gas_fee = 0.02
+                        net_profit = expected_profit - gas_fee
+                        
                         opportunities.append({
                             "type": "value_bet",
                             "platform": "polymarket",
                             "market": market.get("condition_id", ""),
                             "question": market.get("question", ""),
                             "side": "no",
+                            "trade_details": {
+                                "action": "buy no",
+                                "entry_price": no_price,
+                                "token_id": market.get("no_token_id", ""),
+                                "position_size": 1.0,
+                                "max_payout": 1.0
+                            },
                             "price": no_price,
                             "fair_value": fair_value_no,
                             "edge": edge_no,
                             "edge_percentage": edge_no * 100,
+                            "expected_profit": expected_profit,
+                            "fees": {
+                                "platform_fee": 0,
+                                "gas_fee": gas_fee,
+                                "total_fees": gas_fee
+                            },
+                            "net_expected_profit": net_profit,
+                            "roi_percentage": (net_profit / no_price) * 100 if no_price > 0 else 0,
                             "volume": market.get("volume", 0),
                             "liquidity": market.get("liquidity", 0),
                             "timestamp": datetime.now().isoformat()
@@ -136,7 +215,7 @@ class valuescanner:
         opportunities = []
         
         if platform == "kalshi":
-            markets = self.kalshi.get_markets(limit=20)  # reduced to avoid rate limits
+            markets = self.kalshi.get_markets(limit=20)  #reduced to avoid the rate limits
             
             for market in markets:
                 ticker = market.get("ticker", "")
@@ -159,7 +238,7 @@ class valuescanner:
                     })
         
         elif platform == "polymarket":
-            markets = self.polymarket.get_simplified_markets()
+            markets = self.polymarket.get_simplified_markets(self.time_window_hours)
             
             for market in markets:
                 yes_price = market.get("yes_price", 0)
