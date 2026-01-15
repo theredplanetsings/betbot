@@ -1,7 +1,6 @@
-from typing import list, dict, optional
+from typing import List, Dict, Optional
 from datetime import datetime
 import time
-
 
 class arbitragescanner:
     """scans for arbitrage opportunities between polymarket and kalshi"""
@@ -11,7 +10,7 @@ class arbitragescanner:
         self.polymarket = polymarket_client
         self.min_profit_threshold = 0.02  # 2% minimum profit
         
-    def find_cross_platform_arbitrage(self) -> list[dict]:
+    def find_cross_platform_arbitrage(self) -> List[Dict]:
         """
         finds arbitrage opportunities between kalshi and polymarket.
         looks for same event priced differently on both platforms.
@@ -19,7 +18,7 @@ class arbitragescanner:
         opportunities = []
         
         # fetch markets from both platforms
-        kalshi_markets = self.kalshi.get_markets(limit=200)
+        kalshi_markets = self.kalshi.get_markets(limit=50)
         polymarket_markets = self.polymarket.get_simplified_markets()
         
         # match markets by similarity in titles/questions
@@ -35,7 +34,7 @@ class arbitragescanner:
                     if arb:
                         opportunities.append(arb)
         
-        return sorted(opportunities, key=lambda x: x["profit_percentage"], reverse=true)
+        return sorted(opportunities, key=lambda x: x["profit_percentage"], reverse=True)
     
     def _markets_match(self, title1: str, title2: str) -> bool:
         """check if two market titles likely refer to same event"""
@@ -47,12 +46,12 @@ class arbitragescanner:
         
         # need significant overlap
         if not words1 or not words2:
-            return false
+            return False
             
         overlap = len(words1 & words2) / min(len(words1), len(words2))
         return overlap > 0.5
     
-    def _calculate_arbitrage(self, kalshi_market: dict, polymarket_market: dict) -> optional[dict]:
+    def _calculate_arbitrage(self, kalshi_market: dict, polymarket_market: dict) -> Optional[Dict]:
         """
         calculates if arbitrage exists between two matched markets.
         arbitrage exists when you can bet on both outcomes and guarantee profit.
@@ -66,7 +65,7 @@ class arbitragescanner:
         p_no_price = polymarket_market.get("no_price", 0)
         
         if not all([k_yes_ask, k_no_ask, p_yes_price, p_no_price]):
-            return none
+            return None
         
         # strategy 1: buy yes on cheaper platform, no on other
         cost1_kalshi_yes = k_yes_ask
@@ -110,9 +109,9 @@ class arbitragescanner:
                     "timestamp": datetime.now().isoformat()
                 }
         
-        return none
+        return None
     
-    def find_internal_arbitrage(self, platform: str = "kalshi") -> list[dict]:
+    def find_internal_arbitrage(self, platform: str = "kalshi") -> List[Dict]:
         """
         finds arbitrage within single platform.
         checks if yes + no prices don't sum to 1.
@@ -120,7 +119,7 @@ class arbitragescanner:
         opportunities = []
         
         if platform == "kalshi":
-            markets = self.kalshi.get_markets(limit=200)
+            markets = self.kalshi.get_markets(limit=50)
             
             for market in markets:
                 yes_ask = market.get("yes_ask", 0) / 100 if market.get("yes_ask") else 0
@@ -169,7 +168,7 @@ class arbitragescanner:
                                 "timestamp": datetime.now().isoformat()
                             })
         
-        return sorted(opportunities, key=lambda x: x["profit_percentage"], reverse=true)
+        return sorted(opportunities, key=lambda x: x["profit_percentage"], reverse=True)
     
     def scan_all_arbitrage(self) -> dict:
         """runs all arbitrage scans and returns consolidated results"""
