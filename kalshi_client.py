@@ -1,8 +1,7 @@
 import requests
 import time
-from typing import list, dict, optional
+from typing import List, Dict, Optional
 from datetime import datetime
-
 
 class kalshiclient:
     """fetches market data from kalshi's public api"""
@@ -11,7 +10,7 @@ class kalshiclient:
         self.base_url = "https://api.elections.kalshi.com/trade-api/v2"
         self.session = requests.session()
         
-    def get_markets(self, limit: int = 100, status: str = "open") -> list[dict]:
+    def get_markets(self, limit: int = 50, status: str = "open") -> List[Dict]:
         """fetch active markets"""
         try:
             response = self.session.get(
@@ -20,7 +19,7 @@ class kalshiclient:
             )
             response.raise_for_status()
             return response.json().get("markets", [])
-        except exception as e:
+        except Exception as e:
             print(f"failed to fetch kalshi markets: {e}")
             return []
     
@@ -47,11 +46,11 @@ class kalshiclient:
                 "no_volume": sum(bid.get("quantity", 0) for bid in no_bids),
                 "timestamp": datetime.now().isoformat()
             }
-        except exception as e:
+        except Exception as e:
             print(f"failed to fetch orderbook for {ticker}: {e}")
             return {}
     
-    def get_event_markets(self, event_ticker: str) -> list[dict]:
+    def get_event_markets(self, event_ticker: str) -> List[Dict]:
         """fetch all markets for a specific event"""
         try:
             response = self.session.get(
@@ -59,13 +58,14 @@ class kalshiclient:
             )
             response.raise_for_status()
             return response.json().get("markets", [])
-        except exception as e:
+        except Exception as e:
             print(f"failed to fetch event markets: {e}")
             return []
     
     def get_market_details(self, ticker: str) -> dict:
         """fetch detailed market information"""
         try:
+            time.sleep(0.1)  # rate limiting
             response = self.session.get(f"{self.base_url}/markets/{ticker}")
             response.raise_for_status()
             market = response.json().get("market", {})
@@ -84,6 +84,6 @@ class kalshiclient:
                 "close_time": market.get("close_time", ""),
                 "status": market.get("status", "")
             }
-        except exception as e:
+        except Exception as e:
             print(f"failed to fetch market details for {ticker}: {e}")
             return {}
