@@ -1,7 +1,7 @@
 import requests
 import time
 from typing import List, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class polymarketclient:
     """fetches market data from polymarket's public api"""
@@ -107,14 +107,31 @@ class polymarketclient:
             print(f"failed to search markets: {e}")
             return []
     
-    def get_simplified_markets(self) -> List[Dict]:
-        """fetch markets in simplified format for scanning"""
+    def get_simplified_markets(self, time_window_hours: Optional[float] = None) -> List[Dict]:
+        """fetch markets in simplified format for scanning with optional time window"""
         markets = self.get_markets(limit=50)  # reduced to avoid rate limits
         simplified = []
+        
+        # calculate cutoff time if window specified
+        cutoff_time = None
+        if time_window_hours:
+            cutoff_time = datetime.now() + timedelta(hours=time_window_hours)
         
         for market in markets:
             if not market.get("active", False):
                 continue
+            
+            # filter by time window if specified
+            if cutoff_time:
+                end_date_str = market.get("end_date_iso", "")
+                if end_date_str:
+                    try:
+                        end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+                        # skip markets closing after our window
+                        if end_date > cutoff_time:
+                            continue
+                    except:
+                        pass  # include if we can't parse the date
                 
             tokens = market.get("tokens", [])
             yes_token = next((t for t in tokens if t.get("outcome", "").lower() == "yes"), None)
