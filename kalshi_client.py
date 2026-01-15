@@ -1,7 +1,7 @@
 import requests
 import time
 from typing import List, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class kalshiclient:
     """fetches market data from kalshi's public api"""
@@ -10,12 +10,20 @@ class kalshiclient:
         self.base_url = "https://api.elections.kalshi.com/trade-api/v2"
         self.session = requests.session()
         
-    def get_markets(self, limit: int = 50, status: str = "open") -> List[Dict]:
-        """fetch active markets"""
+    def get_markets(self, limit: int = 50, status: str = "open", min_close_ts: Optional[int] = None, max_close_ts: Optional[int] = None) -> List[Dict]:
+        """fetch active markets with optional time window filtering"""
         try:
+            params = {"limit": limit, "status": status}
+            
+            # add time window filters if provided
+            if min_close_ts:
+                params["min_close_ts"] = min_close_ts
+            if max_close_ts:
+                params["max_close_ts"] = max_close_ts
+                
             response = self.session.get(
                 f"{self.base_url}/markets",
-                params={"limit": limit, "status": status}
+                params=params
             )
             response.raise_for_status()
             return response.json().get("markets", [])
