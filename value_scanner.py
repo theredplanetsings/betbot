@@ -1,4 +1,4 @@
-from typing import list, dict, optional
+from typing import List, Dict, Optional
 from datetime import datetime
 import time
 
@@ -10,7 +10,7 @@ class valuescanner:
         self.polymarket = polymarket_client
         self.min_edge = 0.05  # 5% edge minimum
         
-    def find_mispriced_markets(self, platform: str = "kalshi") -> list[dict]:
+    def find_mispriced_markets(self, platform: str = "kalshi") -> List[Dict]:
         """
         finds markets where yes + no prices don't sum to 1,
         indicating potential value on one side.
@@ -18,7 +18,7 @@ class valuescanner:
         opportunities = []
         
         if platform == "kalshi":
-            markets = self.kalshi.get_markets(limit=200)
+            markets = self.kalshi.get_markets(limit=20)  # reduced to avoid rate limits
             
             for market in markets:
                 ticker = market.get("ticker", "")
@@ -126,9 +126,9 @@ class valuescanner:
                             "timestamp": datetime.now().isoformat()
                         })
         
-        return sorted(opportunities, key=lambda x: x["edge_percentage"], reverse=true)
+        return sorted(opportunities, key=lambda x: x["edge_percentage"], reverse=True)
     
-    def find_extreme_probabilities(self, platform: str = "kalshi", threshold: float = 0.9) -> list[dict]:
+    def find_extreme_probabilities(self, platform: str = "kalshi", threshold: float = 0.9) -> List[Dict]:
         """
         finds markets with extreme probabilities (>90% or <10%).
         these might represent high confidence opportunities or potential traps.
@@ -136,7 +136,7 @@ class valuescanner:
         opportunities = []
         
         if platform == "kalshi":
-            markets = self.kalshi.get_markets(limit=200)
+            markets = self.kalshi.get_markets(limit=20)  # reduced to avoid rate limits
             
             for market in markets:
                 ticker = market.get("ticker", "")
@@ -178,9 +178,9 @@ class valuescanner:
                         "timestamp": datetime.now().isoformat()
                     })
         
-        return sorted(opportunities, key=lambda x: abs(x["yes_price"] - 0.5), reverse=true)
+        return sorted(opportunities, key=lambda x: abs(x["yes_price"] - 0.5), reverse=True)
     
-    def find_high_liquidity_value(self, platform: str = "kalshi", min_volume: float = 1000) -> list[dict]:
+    def find_high_liquidity_value(self, platform: str = "kalshi", min_volume: float = 1000) -> List[Dict]:
         """
         finds value opportunities with sufficient liquidity to actually execute.
         filters for markets with good volume.
