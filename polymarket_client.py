@@ -1,8 +1,7 @@
 import requests
 import time
-from typing import list, dict, optional
+from typing import List, Dict, Optional
 from datetime import datetime
-
 
 class polymarketclient:
     """fetches market data from polymarket's public api"""
@@ -13,7 +12,7 @@ class polymarketclient:
         self.gamma_url = "https://gamma-api.polymarket.com"
         self.session = requests.session()
         
-    def get_markets(self, limit: int = 100, active: bool = true) -> list[dict]:
+    def get_markets(self, limit: int = 50, active: bool = True) -> List[Dict]:
         """fetch active markets"""
         try:
             params = {
@@ -26,7 +25,7 @@ class polymarketclient:
             )
             response.raise_for_status()
             return response.json()
-        except exception as e:
+        except Exception as e:
             print(f"failed to fetch polymarket markets: {e}")
             return []
     
@@ -51,7 +50,7 @@ class polymarketclient:
                 "ask_size": float(asks[0]["size"]) if asks else 0,
                 "timestamp": datetime.now().isoformat()
             }
-        except exception as e:
+        except Exception as e:
             print(f"failed to fetch orderbook for {token_id}: {e}")
             return {}
     
@@ -70,8 +69,8 @@ class polymarketclient:
             result = {
                 "condition_id": condition_id,
                 "question": market.get("question", ""),
-                "active": market.get("active", false),
-                "closed": market.get("closed", false),
+                "active": market.get("active", False),
+                "closed": market.get("closed", False),
                 "end_date": market.get("end_date_iso", ""),
                 "volume": float(market.get("volume", 0)),
                 "liquidity": float(market.get("liquidity", 0)),
@@ -91,11 +90,11 @@ class polymarketclient:
                     result["no_token_id"] = token_id
                     
             return result
-        except exception as e:
+        except Exception as e:
             print(f"failed to fetch market price for {condition_id}: {e}")
             return {}
     
-    def search_markets(self, query: str) -> list[dict]:
+    def search_markets(self, query: str) -> List[Dict]:
         """search for markets by keyword"""
         try:
             response = self.session.get(
@@ -104,22 +103,22 @@ class polymarketclient:
             )
             response.raise_for_status()
             return response.json()
-        except exception as e:
+        except Exception as e:
             print(f"failed to search markets: {e}")
             return []
     
-    def get_simplified_markets(self) -> list[dict]:
+    def get_simplified_markets(self) -> List[Dict]:
         """fetch markets in simplified format for scanning"""
-        markets = self.get_markets(limit=200)
+        markets = self.get_markets(limit=50)  # reduced to avoid rate limits
         simplified = []
         
         for market in markets:
-            if not market.get("active", false):
+            if not market.get("active", False):
                 continue
                 
             tokens = market.get("tokens", [])
-            yes_token = next((t for t in tokens if t.get("outcome", "").lower() == "yes"), none)
-            no_token = next((t for t in tokens if t.get("outcome", "").lower() == "no"), none)
+            yes_token = next((t for t in tokens if t.get("outcome", "").lower() == "yes"), None)
+            no_token = next((t for t in tokens if t.get("outcome", "").lower() == "no"), None)
             
             if yes_token and no_token:
                 simplified.append({
