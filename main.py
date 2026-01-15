@@ -43,7 +43,6 @@ class betscanner:
             results["value"] = value_results
             self._print_value_summary(value_results)
         
-        print("\n" + "=" * 60)
         return results
     
     def run_continuous_scan(self, interval: int = 60, scan_type: str = "all"):
