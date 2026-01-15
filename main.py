@@ -49,7 +49,7 @@ class betscanner:
         """runs continuous scanning at specified interval (seconds)"""
         print(f"Starting continuous scan (interval: {interval}s)")
         print(f"Scan type: {scan_type}")
-        print("Press Ctrl+C to stop\n")
+        print("Press ctrl+C to stop\n")
         
         scan_count = 0
         
