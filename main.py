@@ -2,7 +2,6 @@
 """
 main python file - scans kalshi and polymarket for profitable betting opportunities
 """
-
 import time
 import json
 from datetime import datetime
@@ -10,7 +9,6 @@ from kalshi_client import kalshiclient
 from polymarket_client import polymarketclient
 from arbitrage_scanner import arbitragescanner
 from value_scanner import valuescanner
-
 
 class betscanner:
     """orchestrates all scanning operations"""
@@ -57,7 +55,7 @@ class betscanner:
         scan_count = 0
         
         try:
-            while true:
+            while True:
                 scan_count += 1
                 print(f"\n{'='*60}")
                 print(f"scan #{scan_count}")
@@ -74,7 +72,7 @@ class betscanner:
                 print(f"\nwaiting {interval}s until next scan...")
                 time.sleep(interval)
                 
-        except keyboardinterrupt:
+        except KeyboardInterrupt:
             print("\n\nstopping scanner...")
             print(f"completed {scan_count} scans")
     
@@ -135,7 +133,6 @@ class betscanner:
                 print(f"     {title[:60]}")
                 print(f"     price: {price:.3f}")
 
-
 def main():
     """entry point"""
     scanner = betscanner()
@@ -146,7 +143,6 @@ def main():
     
     # for continuous scanning:
     # scanner.run_continuous_scan(interval=60, scan_type="all")
-
 
 if __name__ == "__main__":
     main()
