@@ -23,7 +23,7 @@ class betscanner:
     
     def run_single_scan(self, scan_type: str = "all") -> dict:
         """runs a single scan across all strategies"""
-        print(f"starting scan at {datetime.now().strftime('%h:%m:%s')}")
+        print(f"Starting scan at {datetime.now().strftime('%h:%m:%s')}")
         print("-" * 60)
         
         results = {
@@ -32,13 +32,13 @@ class betscanner:
         }
         
         if scan_type in ["all", "arbitrage"]:
-            print("scanning for arbitrage opportunities...")
+            print("Scanning for arbitrage opportunities..")
             arb_results = self.arb_scanner.scan_all_arbitrage()
             results["arbitrage"] = arb_results
             self._print_arbitrage_summary(arb_results)
         
         if scan_type in ["all", "value"]:
-            print("\nscanning for value opportunities...")
+            print("\nScanning for value opportunities..")
             value_results = self.value_scanner.scan_all_value()
             results["value"] = value_results
             self._print_value_summary(value_results)
@@ -48,16 +48,16 @@ class betscanner:
     
     def run_continuous_scan(self, interval: int = 60, scan_type: str = "all"):
         """runs continuous scanning at specified interval (seconds)"""
-        print(f"starting continuous scan (interval: {interval}s)")
-        print(f"scan type: {scan_type}")
-        print("press ctrl+c to stop\n")
+        print(f"Starting continuous scan (interval: {interval}s)")
+        print(f"Scan type: {scan_type}")
+        print("Press Ctrl+C to stop\n")
         
         scan_count = 0
         
         try:
             while True:
                 scan_count += 1
-                print(f"scan #{scan_count}")
+                print(f"Scan #{scan_count}")
                 
                 results = self.run_single_scan(scan_type)
                 
