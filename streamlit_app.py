@@ -343,11 +343,11 @@ def run_scan_display(scan_type, arb_scanner, value_scanner, container, time_wind
             all_extreme.extend(value_results.get("polymarket_extremes", []))
             
             if all_extreme:
-                st.subheader("extreme probabilities")
-                with st.expander("show extreme probability markets"):
+                st.subheader("Extreme probabilities")
+                with st.expander("Show extreme probability markets"):
                     display_extreme_probabilities(all_extreme[:10])
         
-        st.caption(f"last updated: {scan_time}")
+        st.caption(f"Last updated: {scan_time}")
 
 if __name__ == "__main__":
     main()
