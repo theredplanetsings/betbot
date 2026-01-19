@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-streamlit interface for betbot scanner
+Streamlit interface for BetBot scanner
 """
 
 import streamlit as st
@@ -14,7 +14,7 @@ from arbitrage_scanner import arbitragescanner
 from value_scanner import valuescanner
 
 st.set_page_config(
-    page_title="betbot scanner",
+    page_title="BetBot Scanner",
     page_icon="💰",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -49,7 +49,7 @@ def format_profit_color(profit_pct):
 def display_arbitrage_opportunities(opportunities):
     """display arbitrage opportunities in table format"""
     if not opportunities:
-        st.info("no arbitrage opportunities found")
+        st.info("No arbitrage opportunities found")
         return None
     
     data = []
@@ -95,7 +95,7 @@ def display_arbitrage_opportunities(opportunities):
 def display_value_opportunities(opportunities):
     """display value betting opportunities in table format"""
     if not opportunities:
-        st.info("no value opportunities found")
+        st.info("No value opportunities found")
         return None
     
     data = []
@@ -127,7 +127,7 @@ def display_value_opportunities(opportunities):
 def display_extreme_probabilities(opportunities):
     """display extreme probability markets"""
     if not opportunities:
-        st.info("no extreme probability markets found")
+        st.info("No extreme probability markets found")
         return
     
     data = []
@@ -191,13 +191,13 @@ def main():
         
         st.divider()
         st.markdown("### about")
-        st.markdown("scans kalshi and polymarket for:")
-        st.markdown("- arbitrage opportunities")
-        st.markdown("- value bets")
+        st.markdown("Scans kalshi and polymarket for:")
+        st.markdown("- Arbitrage opportunities")
+        st.markdown("- Value bets")
         st.markdown("- Extreme probabilities")
     
     # initialise clients
-    with st.spinner("initialising clients..."):
+    with st.spinner("Initialising clients..."):
         kalshi, polymarket, arb_scanner, value_scanner = init_clients()
     
     # set time window for scanners
