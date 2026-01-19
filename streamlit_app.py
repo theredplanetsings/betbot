@@ -236,15 +236,15 @@ def main():
             st.session_state.trigger_scan = False
             run_scan_display(scan_type, arb_scanner, value_scanner, st.container(), time_window_option)
         else:
-            st.info("👆 click 'run scan now' to start scanning")
+            st.info("Click 'run scan now' to start scanning")
 
 
 def run_scan_display(scan_type, arb_scanner, value_scanner, container, time_window_label="all markets"):
     """run scan and display results"""
     with container:
         scan_time = datetime.now().strftime("%H:%M:%S")
-        st.subheader(f"scan results - {scan_time}")
-        st.caption(f"🔍 filtering: {time_window_label}")
+        st.subheader(f"Scan results - {scan_time}")
+        st.caption(f"Filtering: {time_window_label}")
     
         col1, col2, col3, col4 = st.columns(4)
         results = {}

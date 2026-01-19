@@ -1,6 +1,6 @@
-requests>=2.31.0
+requests>=2.33.0
 websockets>=12.0
-aiohttp>=3.9.0
+aiohttp>=3.13.2
 python-dotenv>=1.0.0
 streamlit>=1.30.0
 pandas>=2.0.0
