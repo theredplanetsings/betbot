@@ -186,7 +186,7 @@ def main():
             step=10
         )
         
-        if st.button("run scan now", type="primary"):
+        if st.button("Run scan now", type="primary"):
             st.session_state.trigger_scan = True
         
         st.divider()
@@ -236,8 +236,7 @@ def main():
             st.session_state.trigger_scan = False
             run_scan_display(scan_type, arb_scanner, value_scanner, st.container(), time_window_option)
         else:
-            st.info("Click 'run scan now' to start scanning")
-
+            st.info("Click 'Run scan now' to start scanning")
 
 def run_scan_display(scan_type, arb_scanner, value_scanner, container, time_window_label="all markets"):
     """run scan and display results"""
